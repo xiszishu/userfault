@@ -145,7 +145,7 @@ int main(int argc, char **argv)
     pthread_t uffd_thread;
 
     page_size = get_page_size();
-    num_pages = 100000;
+    num_pages = 1000000;
 
     // open the userfault fd
     uffd = syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK);
@@ -170,7 +170,8 @@ int main(int argc, char **argv)
 
     // allocate a memory region to be managed by userfaultfd
     region = mmap(NULL, page_size * num_pages, PROT_READ|PROT_WRITE,
-            MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+                  MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
+                  // MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     if (region == MAP_FAILED) {
         perror("mmap");
         exit(1);
