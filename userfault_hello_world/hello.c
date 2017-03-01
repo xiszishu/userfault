@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
 
 static volatile int stop;
 
@@ -55,8 +56,9 @@ static void *handler(void *arg)
     struct params *p = arg;
     long page_size = p->page_size;
     char buf[page_size];
-    faultnum=0;
+    static void *lastpage=0;
 
+    faultnum=0;
     for (;;) {
         struct uffd_msg msg;
 
@@ -108,13 +110,21 @@ static void *handler(void *arg)
         // handle the page fault by copying a page worth of bytes
         if (msg.event & UFFD_EVENT_PAGEFAULT)
         {
+
             faultnum++;
             //fprintf(stdout,"page missed\n");
             long long addr = msg.arg.pagefault.address;
             struct uffdio_copy copy;
+            if (lastpage!=0)
+            {
+                int ret=madvise(lastpage,page_size,MADV_DONTNEED);
+                if (ret==-1){ perror("madvise");assert(0);}
+            }
+            lastpage=(void *)addr;
+
             copy.src = (long long)buf;
             copy.dst = (long long)addr;
-            copy.len = page_size*1.5;
+            copy.len = page_size;
             copy.mode = 0;
             if (ioctl(p->uffd, UFFDIO_COPY, &copy) == -1) {
                 perror("ioctl/copy");

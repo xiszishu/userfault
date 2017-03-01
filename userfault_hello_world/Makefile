@@ -1,3 +1,3 @@
 FILE := hello
 all:
-	gcc $(FILE).c -lpthread -o $(FILE)
+	gcc -std=gnu99 $(FILE).c -lrt -lpthread -o $(FILE)
